@@ -83,7 +83,7 @@ class TalkSubmission
      */
     private function isValidTalkType($type)
     {
-        return in_array($type, ['regular', 'tutorial']);
+        return in_array($type, ['regular', 'ignite', 'tutorial']);
     }
 
     private function guardLevelIsValid($data)

@@ -6,7 +6,7 @@ body {
 }
 
 a {
-  color: #e24b3b;
+  color: #B5212F;
 }
 
 a:hover {
@@ -18,8 +18,6 @@ a:hover {
 }
 
 .header {
-  background: #e24b3b;
-  color: #FFF;
   padding: 6rem 0;
 }
 
@@ -47,7 +45,7 @@ a:hover {
 }
 
 .section--primary {
-  background: #e24b3b;
+  background: #B5212F;
   color: #FFF;
 }
 
@@ -139,8 +137,8 @@ a:hover {
  * @extends btn
  */
 .btn-opencfp--primary {
-  background: #FFF;
-  color: #e24b3b;
+  background: #B5212F;
+  color: #fff;
 }
 
 .btn-opencfp--primary:hover {
@@ -160,8 +158,7 @@ a:hover {
 
 .btn-opencfp--outlined {
   background: transparent;
-  border-color: #FFF;
-  color: #FFF;
+  border-color: #000;
 }
 
 .btn-opencfp--outlined:hover {

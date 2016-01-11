@@ -103,6 +103,7 @@ class TalkForm extends Form
     {
         $validTalkTypes = [
             'regular',
+            'ignite',
             'tutorial',
         ];
 

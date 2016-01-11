@@ -12,7 +12,7 @@
         <label for="form-talk-description" class="col-sm-2 control-label">Description/Abstract</label>
         <div class="col-sm-10">
             <textarea id="form-talk-description" name="description" class="form-control" placeholder="Give a description of your talk (Abstract)" rows="10">{{ description }}</textarea>
-            <p class="help-block">Speaker abstract can be written using <a href="http://daringfireball.net/projects/markdown/basics" target="_blank">markdown</a> to support links</p>
+            <p class="help-block">Abstract can be written using <a href="http://daringfireball.net/projects/markdown/basics" target="_blank">markdown</a> to support links</p>
         </div>
     </div>
     <div class="form-group">
@@ -25,30 +25,13 @@
         <label for="form-talk-type" class="col-sm-2 control-label">Talk Type</label>
         <div class="col-sm-10">
             <select id="form-talk-type" name="type" class="form-control">
-                <option value="regular" {% if type == 'regular' %}selected {% endif %}>Regular</option>
+                <option value="regular" {% if type == 'regular' %}selected {% endif %}>Regular Talk</option>
+                <option value="ignite" {% if type == 'ignite' %}selected {% endif %}>Ignite Talk</option>
                 <option value="tutorial" {% if type == 'tutorial' %}selected {% endif %}>Tutorial</option>
             </select>
         </div>
     </div>
-    <div class="form-group">
-        <label for="form-talk-category" class="col-sm-2 control-label">Talk Category</label>
-        <div class="col-sm-10">
-            <select id="form-talk-category" name="category" class="form-control">
-                <option value="api" {% if category == 'api' %}selected {% endif %}>APIs (REST, SOAP, etc.)</option>
-                <option value="continuousdelivery" {% if category == 'continuousdelivery' %}selected {% endif %}>Continuous Delivery</option>
-                <option value="database" {% if category == 'database' %}selected {% endif %}>Database</option>
-                <option value="development" {% if category == 'development' %}selected {% endif %}>Development</option>
-                <option value="devops" {% if category == 'devops' %}selected {% endif %}>Devops</option>
-                <option value="framework" {% if category == 'framework' %}selected {% endif %}>Framework</option>
-                <option value="ibmi" {% if category == 'ibmi' %}selected {% endif %}>IBMi</option>
-                <option value="javascript" {% if category == 'javascript' %}selected {% endif %}>JavaScript</option>
-                <option value="security" {% if category == 'security' %}selected {% endif %}>Security</option>
-                <option value="testing" {% if category == 'testing' %}selected {% endif %}>Testing</option>
-                <option value="uiux" {% if category == 'uiux' %}selected {% endif %}>UI/UX</option>
-                <option value="other" {% if category == 'other' %}selected {% endif %}>Other</option>
-            </select>
-        </div>
-    </div>
+    <input type="hidden" name="category" value="devops"></input>
     <div class="form-group">
         <label for="form-talk-level" class="col-sm-2 control-label">Talk Level</label>
         <div class="col-sm-10">
@@ -66,16 +49,7 @@
             <p class="help-block">Talk additional information can be written using <a href="http://daringfireball.net/projects/markdown/basics" target="_blank">markdown</a> to support links</p>
         </div>
     </div>
-    <div class="form-group">
-        <label for="form-sponsor" class="col-sm-2 control-label">Company Sponsorship</label>
-        <div class="col-sm-10">
-            <div class="checkbox">
-                <label for="form-sponsor">
-                    <input id="form-sponsor" name="sponsor" type="checkbox" value="1" {% if sponsor == '1' %}checked{% endif %}> Is your company sponsoring, or would they like to?
-                </label>
-            </div>
-        </div>
-    </div>
+    <input type="hidden" name="sponsor" value="0">
     <div class="form-group">
         <label for="form-desired" class="col-sm-2 control-label">Most Desired</label>
         <div class="col-sm-10">
