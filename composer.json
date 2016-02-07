@@ -38,14 +38,16 @@
         "monolog/monolog": "^1.17"
     },
     "autoload": {
-        "psr-4": {"OpenCFP\\": "classes/"}
+        "psr-4": {
+            "OpenCFP\\": "classes/"
+        }
     },
     "autoload-dev": {
         "classmap": [
-            "tests/unit"
+            "tests/DatabaseTestCase.php"
         ],
         "psr-4": {
-            "OpenCFP\\": "tests/OpenCFP/"
+            "OpenCFP\\Test\\": "tests/"
         }
     },
     "require-dev": {
