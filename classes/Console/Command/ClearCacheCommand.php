@@ -8,11 +8,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ClearCacheCommand extends BaseCommand
 {
-    /**
-     * Configure the command options.
-     *
-     * @return void
-     */
     protected function configure()
     {
         $this
@@ -20,24 +15,19 @@ class ClearCacheCommand extends BaseCommand
             ->setDescription('Clears the caches');
     }
 
-    /**
-     * Execute the command.
-     *
-     * @param  \Symfony\Component\Console\Input\InputInterface   $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface $output
-     * @return void
-     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
         $output->writeln('Clearing all caches...');
 
-        $purifierPath = $this->app->cachePurifierPath();
-        $output->writeln(sprintf('  <info>✓</info> %s', $purifierPath));
-        passthru(sprintf('rm -rf %s/*', $purifierPath));
+        $paths = [
+            $this->app->cachePurifierPath(),
+            $this->app->cacheTwigPath(),
+        ];
 
-        $twigPath = $this->app->cacheTwigPath();
-        $output->writeln(sprintf('  <info>✓</info> %s', $twigPath));
-        passthru(sprintf('rm -rf %s/*', $twigPath));
+        array_walk($paths, function ($path) use ($output) {
+            $output->writeln(sprintf('  <info>✓</info> %s', $path));
+            passthru(sprintf('rm -rf %s/*', $path));
+        });
 
         $output->writeln('Done!');
     }

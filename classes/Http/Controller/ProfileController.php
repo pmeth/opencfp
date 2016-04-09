@@ -2,8 +2,10 @@
 
 namespace OpenCFP\Http\Controller;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Http\Form\SignupForm;
 use Silex\Application;
+use Spot\Locator;
 use Symfony\Component\HttpFoundation\Request;
 
 class ProfileController extends BaseController
@@ -12,11 +14,14 @@ class ProfileController extends BaseController
 
     public function editAction(Request $req)
     {
-        if (!$this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
         if ((string) $user->getId() !== $req->get('id')) {
             $this->app['session']->set('flash', [
@@ -28,7 +33,10 @@ class ProfileController extends BaseController
             return $this->redirectTo('dashboard');
         }
 
-        $mapper = $this->app['spot']->mapper('\OpenCFP\Domain\Entity\User');
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+        
+        $mapper = $spot->mapper('\OpenCFP\Domain\Entity\User');
         $speaker_data = $mapper->get($user->getId())->toArray();
 
         $form_data = [
@@ -54,11 +62,14 @@ class ProfileController extends BaseController
 
     public function processAction(Request $req)
     {
-        if (!$this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
         if ((string) $user->getId() !== $req->get('id')) {
             $this->app['session']->set('flash', [
@@ -114,7 +125,10 @@ class ProfileController extends BaseController
                 $processor->process($file, $sanitized_data['speaker_photo']);
             }
 
-            $mapper = $this->app['spot']->mapper('\OpenCFP\Domain\Entity\User');
+            /* @var Locator $spot */
+            $spot = $this->app['spot'];
+            
+            $mapper = $spot->mapper('\OpenCFP\Domain\Entity\User');
             $user = $mapper->get($user->getId());
             $user->email = $sanitized_data['email'];
             $user->first_name = $sanitized_data['first_name'];
@@ -162,7 +176,10 @@ class ProfileController extends BaseController
 
     public function passwordAction(Request $req)
     {
-        if (!$this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
@@ -171,11 +188,14 @@ class ProfileController extends BaseController
 
     public function passwordProcessAction(Request $req)
     {
-        if (!$this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
         /**
          * Okay, the logic is kind of weird but we can use the SignupForm
@@ -233,7 +253,10 @@ class ProfileController extends BaseController
      */
     protected function saveUser($app, $sanitized_data)
     {
-        $mapper = $this->app['spot']->mapper('\OpenCFP\Domain\Entity\User');
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+        
+        $mapper = $spot->mapper('\OpenCFP\Domain\Entity\User');
         $user = $mapper->get($sanitized_data['user_id']);
         $user->email = $sanitized_data['email'];
         $user->first_name = $sanitized_data['first_name'];

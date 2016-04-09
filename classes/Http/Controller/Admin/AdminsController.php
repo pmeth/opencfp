@@ -2,8 +2,10 @@
 
 namespace OpenCFP\Http\Controller\Admin;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Http\Controller\BaseController;
 use Pagerfanta\View\TwitterBootstrap3View;
+use Spot\Locator;
 use Symfony\Component\HttpFoundation\Request;
 
 class AdminsController extends BaseController
@@ -12,8 +14,15 @@ class AdminsController extends BaseController
 
     public function indexAction(Request $req)
     {
-        $adminGroup = $this->app['sentry']->getGroupProvider()->findByName('Admin');
-        $adminUsers = $this->app['sentry']->findAllUsersInGroup($adminGroup);
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $adminGroup = $sentry->getGroupProvider()->findByName('Admin');
+        $adminUsers = $sentry->findAllUsersInGroup($adminGroup);
 
         // Set up our page stuff
         $adapter = new \Pagerfanta\Adapter\ArrayAdapter($adminUsers->toArray());
@@ -47,7 +56,14 @@ class AdminsController extends BaseController
 
     public function removeAction(Request $req)
     {
-        $admin = $this->app['sentry']->getUser();
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin = $sentry->getUser();
 
         if ($admin->getId() == $req->get('id')) {
             $this->app['session']->set('flash', [
@@ -59,11 +75,14 @@ class AdminsController extends BaseController
             return $this->redirectTo('admin_admins');
         }
 
-        $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\User::class);
-        $user_data = $mapper->get($req->get('id'))->toArray();
-        $user = $this->app['sentry']->getUserProvider()->findByLogin($user_data['email']);
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
 
-        $adminGroup = $this->app['sentry']->getGroupProvider()->findByName('Admin');
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\User::class);
+        $user_data = $mapper->get($req->get('id'))->toArray();
+        $user = $sentry->getUserProvider()->findByLogin($user_data['email']);
+
+        $adminGroup = $sentry->getGroupProvider()->findByName('Admin');
         $response = $user->removeGroup($adminGroup);
 
         if ($response == true) {

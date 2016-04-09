@@ -2,7 +2,9 @@
 
 namespace OpenCFP\Http\Controller\Admin;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Http\Controller\BaseController;
+use Spot\Locator;
 use Symfony\Component\HttpFoundation\Request;
 
 class ExportsController extends BaseController
@@ -11,26 +13,41 @@ class ExportsController extends BaseController
 
     public function anonymousTalksExportAction(Request $req)
     {
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
         return $this->talksExportAction(false);
     }
 
     public function attributedTalksExportAction(Request $req)
     {
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
         return $this->talksExportAction(true);
     }
 
     public function selectedTalksExportAction(Request $req)
     {
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
         return $this->talksExportAction(true, ['selected' => 1]);
     }
 
     public function emailExportAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
-            return $this->redirectTo('login');
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
         }
 
-        $mapper = $this->app['spot']->mapper('OpenCFP\Domain\Entity\Talk');
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $mapper = $spot->mapper('OpenCFP\Domain\Entity\Talk');
         $talks = $mapper->all();
 
         foreach ($talks as $talk) {
@@ -48,12 +65,12 @@ class ExportsController extends BaseController
 
     private function talksExportAction($attributed, $where = null)
     {
-        if (!$this->userHasAccess($this->app)) {
-            return $this->redirectTo('login');
-        }
-
         $sort = [ "created_at" => "DESC" ];
-        $admin_user_id = $this->app['sentry']->getUser()->getId();
+
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin_user_id = $sentry->getUser()->getId();
         $mapper = $this->app['spot']->mapper('OpenCFP\Domain\Entity\Talk');
         $talks = $mapper->getAllPagerFormatted($admin_user_id, $sort, $attributed, $where);
 

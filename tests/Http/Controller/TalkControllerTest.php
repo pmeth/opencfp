@@ -2,6 +2,7 @@
 
 namespace OpenCFP\Test\Http\Controller;
 
+use Cartalyst\Sentry\Sentry;
 use DateTime;
 use Mockery as m;
 use OpenCFP\Application;
@@ -26,10 +27,12 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
             'dbname' => 'sqlite::memory',
             'driver' => 'pdo_sqlite',
         ]);
-        $this->app['spot'] = new \Spot\Locator($cfg);
+        $spot = new \Spot\Locator($cfg);
+        
+        $this->app['spot'] = $spot;
 
         // Initialize the talk table in the sqlite database
-        $talk_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        $talk_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $talk_mapper->migrate();
 
         // Set things up so Sentry believes we're logged in
@@ -38,7 +41,7 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
         $user->shouldReceive('getLogin')->andReturn(uniqid() . '@grumpy-learning.com');
 
         // Create a test double for Sentry
-        $sentry = m::mock('StdClass');
+        $sentry = m::mock(Sentry::class);
         $sentry->shouldReceive('check')->andReturn(true);
         $sentry->shouldReceive('getUser')->andReturn($user);
         $this->app['sentry'] = $sentry;
@@ -66,6 +69,9 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
         $swiftmailer->shouldReceive('send')->andReturn(true);
         $this->app['mailer'] = $swiftmailer;
 
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
         // Get our request object to return expected data
         $talk_data = [
             'title' => 'Test Title With Ampersand',
@@ -77,7 +83,7 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
             'slides' => '',
             'other' => '',
             'sponsor' => '',
-            'user_id' => $this->app['sentry']->getUser()->getId(),
+            'user_id' => $sentry->getUser()->getId(),
         ];
 
         $this->setPost($talk_data);
@@ -86,7 +92,7 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
          * If the talk was successfully created, a success value is placed
          * into the session flash area for display
          */
-        $create_response = $controller->processCreateAction($this->req);
+        $controller->processCreateAction($this->req);
 
         $create_flash = $this->app['session']->get('flash');
         $this->assertEquals($create_flash['type'], 'success');
@@ -97,7 +103,7 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
         $talk_data['title'] = "Test Title With Ampersand & More Things";
         $this->setPost($talk_data);
 
-        $update_response = $controller->updateAction($this->req, $this->app);
+        $controller->updateAction($this->req, $this->app);
         $update_flash = $this->app['session']->get('flash');
         $this->assertEquals($update_flash['type'], 'success');
     }
@@ -125,6 +131,9 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
         $controller = new TalkController();
         $controller->setApplication($this->app);
 
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
         // Get our request object to return expected data
         $talk_data = [
             'title' => 'Test Submission',
@@ -136,7 +145,7 @@ class TalkControllerTest extends \PHPUnit_Framework_TestCase
             'slides' => '',
             'other' => '',
             'sponsor' => '',
-            'user_id' => $this->app['sentry']->getUser()->getId(),
+            'user_id' => $sentry->getUser()->getId(),
         ];
 
         $this->setPost($talk_data);

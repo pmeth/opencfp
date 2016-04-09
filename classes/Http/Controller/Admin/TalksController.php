@@ -2,9 +2,11 @@
 
 namespace OpenCFP\Http\Controller\Admin;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Http\Controller\BaseController;
 use OpenCFP\Http\Controller\FlashableTrait;
 use Pagerfanta\View\TwitterBootstrap3View;
+use Spot\Locator;
 use Symfony\Component\HttpFoundation\Request;
 
 class TalksController extends BaseController
@@ -14,11 +16,14 @@ class TalksController extends BaseController
 
     public function indexAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
-            return $this->redirectTo('login');
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
         }
 
-        $admin_user_id = $this->app['sentry']->getUser()->getId();
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin_user_id = $sentry->getUser()->getId();
         $options = [
             'order_by' => $req->get('order_by'),
             'sort' => $req->get('sort'),
@@ -72,7 +77,10 @@ class TalksController extends BaseController
 
     private function getFilteredTalks($filter = null, $admin_user_id, $options = [])
     {
-        $talk_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $talk_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         if ($filter === null) {
             return $talk_mapper->getAllPagerFormatted($admin_user_id, $options);
         }
@@ -109,13 +117,16 @@ class TalksController extends BaseController
 
     public function viewAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
-            return $this->redirectTo('login');
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
         }
 
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
         // Get info about the talks
-        $talk_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
-        $meta_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\TalkMeta::class);
+        $talk_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        $meta_mapper = $spot->mapper(\OpenCFP\Domain\Entity\TalkMeta::class);
         $talk_id = $req->get('id');
 
         $talk = $talk_mapper->where(['id' => $talk_id])
@@ -132,9 +143,12 @@ class TalksController extends BaseController
             return $this->app->redirect($this->url('admin_talks'));
         }
 
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
         // Mark talk as viewed by admin
         $talk_meta = $meta_mapper->where([
-                'admin_user_id' => $this->app['sentry']->getUser()->getId(),
+                'admin_user_id' => $sentry->getUser()->getId(),
                 'talk_id' => (int)$req->get('id'),
             ])
             ->first();
@@ -145,7 +159,7 @@ class TalksController extends BaseController
 
         if (!$talk_meta->viewed) {
             $talk_meta->viewed = true;
-            $talk_meta->admin_user_id = $this->app['sentry']->getUser()->getId();
+            $talk_meta->admin_user_id = $sentry->getUser()->getId();
             $talk_meta->talk_id = $talk_id;
             $meta_mapper->save($talk_meta);
         }
@@ -155,7 +169,7 @@ class TalksController extends BaseController
             ->toArray();
 
         // Get info about our speaker
-        $user_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\User::class);
+        $user_mapper = $spot->mapper(\OpenCFP\Domain\Entity\User::class);
         $speaker = $user_mapper->get($talk->user_id)->toArray();
 
         // Grab all the other talks and filter out the one we have
@@ -180,11 +194,14 @@ class TalksController extends BaseController
 
     public function rateAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 
-        $admin_user_id = (int)$this->app['sentry']->getUser()->getId();
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin_user_id = (int) $sentry->getUser()->getId();
         $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\TalkMeta::class);
 
         $talk_rating = (int)$req->get('rating');
@@ -221,18 +238,24 @@ class TalksController extends BaseController
      */
     public function favoriteAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 
-        $admin_user_id = (int) $this->app['sentry']->getUser()->getId();
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin_user_id = (int) $sentry->getUser()->getId();
         $status = true;
 
         if ($req->get('delete') !== null) {
             $status = false;
         }
 
-        $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Favorite::class);
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Favorite::class);
 
         if ($status == false) {
             // Delete the record that matches
@@ -268,7 +291,7 @@ class TalksController extends BaseController
      */
     public function selectAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 
@@ -278,7 +301,10 @@ class TalksController extends BaseController
             $status = false;
         }
 
-        $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $talk = $mapper->get($req->get('id'));
         $talk->selected = $status;
         $mapper->save($talk);
@@ -288,14 +314,21 @@ class TalksController extends BaseController
 
     public function commentCreateAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 
         $talk_id = (int)$req->get('id');
-        $admin_user_id = (int)$this->app['sentry']->getUser()->getId();
 
-        $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\TalkComment::class);
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        $admin_user_id = (int) $sentry->getUser()->getId();
+
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\TalkComment::class);
         $comment = $mapper->get();
 
         $comment->talk_id = $talk_id;

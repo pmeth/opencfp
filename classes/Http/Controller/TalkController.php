@@ -2,12 +2,15 @@
 
 namespace OpenCFP\Http\Controller;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Application\NotAuthorizedException;
 use OpenCFP\Application\Speakers;
 use OpenCFP\Http\Form\TalkForm;
 use Silex\Application;
+use Spot\Locator;
 use Swift_Message;
 use Symfony\Component\HttpFoundation\Request;
+use Twig_Environment;
 
 class TalkController extends BaseController
 {
@@ -39,12 +42,14 @@ class TalkController extends BaseController
         /* @var Speakers $speakers */
         $speakers = $this->app['application.speakers'];
 
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
         /////////
-        if (!$this->app['sentry']->check()) {
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
-        $user = $this->app['sentry']->getUser();
         /////////
 
         try {
@@ -65,7 +70,10 @@ class TalkController extends BaseController
      */
     public function editAction(Request $req)
     {
-        if (!$this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
@@ -88,9 +96,12 @@ class TalkController extends BaseController
             return $this->redirectTo('dashboard');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
-        $talk_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $talk_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $talk_info = $talk_mapper->get($talk_id)->toArray();
 
         if ($talk_info['user_id'] !== (int) $user->getId()) {
@@ -123,7 +134,10 @@ class TalkController extends BaseController
      */
     public function createAction(Request $req)
     {
-        if (! $this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
@@ -164,7 +178,10 @@ class TalkController extends BaseController
      */
     public function processCreateAction(Request $req)
     {
-        if (! $this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
@@ -179,7 +196,7 @@ class TalkController extends BaseController
             return $this->redirectTo('dashboard');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
         $request_data = [
             'title' => $req->get('title'),
@@ -213,7 +230,10 @@ class TalkController extends BaseController
                 'user_id' => (int) $user->getId(),
             ];
 
-            $talk_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+            /* @var Locator $spot */
+            $spot = $this->app['spot'];
+
+            $talk_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
             $talk = $talk_mapper->create($data);
 
             $this->app['session']->set('flash', [
@@ -257,11 +277,14 @@ class TalkController extends BaseController
 
     public function updateAction(Request $req)
     {
-        if (! $this->app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $this->app['sentry'];
+
+        if (!$sentry->check()) {
             return $this->redirectTo('login');
         }
 
-        $user = $this->app['sentry']->getUser();
+        $user = $sentry->getUser();
 
         $request_data = [
             'id' => $req->get('id'),
@@ -297,7 +320,10 @@ class TalkController extends BaseController
                 'user_id' => (int) $user->getId(),
             ];
 
-            $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+            /* @var Locator $spot */
+            $spot = $this->app['spot'];
+
+            $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
             $talk = $mapper->get($data['id']);
 
             foreach ($data as $field => $value) {
@@ -345,7 +371,10 @@ class TalkController extends BaseController
 
     public function deleteAction(Request $req, Application $app)
     {
-        if (! $app['sentry']->check()) {
+        /* @var Sentry $sentry */
+        $sentry = $app['sentry'];
+
+        if (!$sentry->check()) {
             return $app->json(['delete' => 'no-user']);
         }
 
@@ -354,7 +383,7 @@ class TalkController extends BaseController
             return $app->json(['delete' => 'no']);
         }
 
-        $user = $app['sentry']->getUser();
+        $user = $sentry->getUser();
         $talk_mapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $talk = $talk_mapper->get($req->get('tid'));
 
@@ -377,11 +406,17 @@ class TalkController extends BaseController
      */
     protected function sendSubmitEmail(Application $app, $email, $talk_id)
     {
-        $mapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+        /* @var Locator $spot */
+        $spot = $app['spot'];
+
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $talk = $mapper->get($talk_id);
 
+        /* @var Twig_Environment $twig */
+        $twig = $app['twig'];
+
         // Build our email that we will send
-        $template = $app['twig']->loadTemplate('emails/talk_submit.twig');
+        $template = $twig->loadTemplate('emails/talk_submit.twig');
         $parameters = [
             'email' => $this->app->config('application.email'),
             'title' => $this->app->config('application.title'),

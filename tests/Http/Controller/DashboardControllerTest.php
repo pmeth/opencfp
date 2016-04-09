@@ -5,12 +5,12 @@ namespace OpenCFP\Test\Http\Controller;
 use Cartalyst\Sentry\Sentry;
 use Mockery as m;
 use OpenCFP\Application;
-use OpenCFP\Domain\Entity\User;
 use OpenCFP\Domain\Speaker\SpeakerProfile;
 use OpenCFP\Environment;
 use OpenCFP\Test\Util\Faker\GeneratorTrait;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
+use Twig_Environment;
 
 class DashboardControllerTest extends \PHPUnit_Framework_TestCase
 {
@@ -34,7 +34,7 @@ class DashboardControllerTest extends \PHPUnit_Framework_TestCase
         $user->shouldReceive('hasAccess')->with('admin')->andReturn(true);
 
         // Create a test double for Sentry
-        $sentry = m::mock('StdClass');
+        $sentry = m::mock(Sentry::class);
         $sentry->shouldReceive('check')->times(3)->andReturn(true);
         $sentry->shouldReceive('getUser')->andReturn($user);
         $app['sentry'] = $sentry;
@@ -83,7 +83,11 @@ class DashboardControllerTest extends \PHPUnit_Framework_TestCase
         // TODO services like configuration and template rending is painful.
         $config = $app['config']['application'];
         $config['online_conference'] = true;
-        $app['twig']->addGlobal('site', $config);
+
+        /* @var Twig_Environment $twig */
+        $twig = $app['twig'];
+
+        $twig->addGlobal('site', $config);
 
         // There's some global before filters that call Sentry directly.
         // We have to stub that behaviour here to have it think we are not admin.
@@ -93,7 +97,7 @@ class DashboardControllerTest extends \PHPUnit_Framework_TestCase
         $user->shouldReceive('getId')->andReturn(1);
         $user->shouldReceive('id')->andReturn(1);
         $user->shouldReceive('hasAccess')->with('admin')->andReturn(false);
-        $sentry = m::mock('stdClass');
+        $sentry = m::mock(Sentry::class);
         $sentry->shouldReceive('check')->andReturn(true);
         $sentry->shouldReceive('getUser')->andReturn($user);
         $app['sentry'] = $sentry;

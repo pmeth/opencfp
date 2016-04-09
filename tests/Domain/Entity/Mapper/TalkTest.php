@@ -4,6 +4,7 @@ namespace OpenCFP\Test\Domain\Entity\Mapper;
 
 use OpenCFP\Application;
 use OpenCFP\Environment;
+use Spot\Locator;
 
 /**
  * @group db
@@ -22,11 +23,14 @@ class TalkTest extends \PHPUnit_Framework_TestCase
             'dbname' => 'sqlite::memory',
             'driver' => 'pdo_sqlite',
         ]);
-        $this->app['spot'] = new \Spot\Locator($cfg);
-        $this->mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+
+        $spot = new \Spot\Locator($cfg);
+
+        $this->app['spot'] = $spot;
+        $this->mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
 
         foreach ($this->entities as $entity) {
-            $this->app['spot']->mapper('OpenCFP\Domain\Entity\\' . $entity)->migrate();
+            $spot->mapper('OpenCFP\Domain\Entity\\' . $entity)->migrate();
         }
     }
 
@@ -38,7 +42,11 @@ class TalkTest extends \PHPUnit_Framework_TestCase
         // Create a test talk
         $admin_user_id = 1;
         $admin_majority = 3;
-        $mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
 
         $talk_data = [
             'title' => 'Admin Favorite Talk',
@@ -51,7 +59,7 @@ class TalkTest extends \PHPUnit_Framework_TestCase
         $talk = $mapper->create($talk_data);
 
         $this->createAdminFavoredTalks($admin_user_id, $admin_majority, $talk);
-        $expected_admin_favorite = $mapper->createdFormattedOutput($talk, $admin_user_id);
+        $mapper->createdFormattedOutput($talk, $admin_user_id);
         $admin_favorite_collection = $mapper->getFavoritesByUserId($admin_user_id);
         $admin_favorite = $admin_favorite_collection[0];
 
@@ -66,23 +74,13 @@ class TalkTest extends \PHPUnit_Framework_TestCase
     // Factory Methods
     //
 
-    private function createViewedTalks($talk_data, $total)
-    {
-        $meta_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\TalkMeta::class);
-        for ($i = 0; $i <= $total; $i++) {
-            $talk = $this->mapper->create($talk_data);
-            $meta_mapper->create([
-                'admin_user_id' => 1,
-                'talk_id' => $talk->id,
-                'viewed' => true,
-            ]);
-        }
-    }
-
     private function createAdminFavoredTalks($admin_user_id, $admin_majority, $talk)
     {
+        /* @var Locator $spot */
+        $spot = $this->app['spot'];
+        
         // Create a test user
-        $user_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\User::class);
+        $user_mapper = $spot->mapper(\OpenCFP\Domain\Entity\User::class);
         $user_mapper->create([
             'id' => $admin_user_id,
             'email' => 'test@test.com',
@@ -92,7 +90,7 @@ class TalkTest extends \PHPUnit_Framework_TestCase
         ]);
 
         // Create $admin_majority favorite records linked to that talk
-        $favorite_mapper = $this->app['spot']->mapper(\OpenCFP\Domain\Entity\Favorite::class);
+        $favorite_mapper = $spot->mapper(\OpenCFP\Domain\Entity\Favorite::class);
         $favorite_mapper->create(['admin_user_id' => $admin_user_id, 'talk_id' => $talk->id]);
 
         for ($x = 1; $x <= $admin_majority; $x++) {
@@ -101,7 +99,7 @@ class TalkTest extends \PHPUnit_Framework_TestCase
                 'admin_user_id' => $random_admin_id,
                 'talk_id' => $talk->id,
             ];
-            $favorite = $favorite_mapper->create($favorite_data);
+            $favorite_mapper->create($favorite_data);
         }
     }
 }

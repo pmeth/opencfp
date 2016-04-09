@@ -2,6 +2,7 @@
 
 namespace OpenCFP\Provider;
 
+use Cartalyst\Sentry\Sentry;
 use Illuminate\Database\Capsule\Manager as Capsule;
 use League\OAuth2\Server\ResourceServer;
 use OpenCFP\Application\Speakers;
@@ -21,6 +22,7 @@ use OpenCFP\Infrastructure\Persistence\SpotTalkRepository;
 use RandomLib\Factory;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
+use Spot\Locator;
 
 class ApplicationServiceProvider implements ServiceProviderInterface
 {
@@ -30,13 +32,19 @@ class ApplicationServiceProvider implements ServiceProviderInterface
     public function register(Application $app)
     {
         $app['application.speakers'] = $app->share(function ($app) {
-            $userMapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\User::class);
-            $talkMapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+            /* @var Locator $spot */
+            $spot = $app['spot'];
+            
+            $userMapper = $spot->mapper(\OpenCFP\Domain\Entity\User::class);
+            $talkMapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
             $speakerRepository = new SpotSpeakerRepository($userMapper);
 
+            /* @var Sentry $sentry */
+            $sentry = $app['sentry'];
+            
             return new Speakers(
                 new CallForProposal(new \DateTime($app->config('application.enddate'))),
-                new SentryIdentityProvider($app['sentry'], $speakerRepository),
+                new SentryIdentityProvider($sentry, $speakerRepository),
                 $speakerRepository,
                 new SpotTalkRepository($talkMapper),
                 new EventDispatcher()
@@ -83,8 +91,11 @@ class ApplicationServiceProvider implements ServiceProviderInterface
         });
 
         $app['application.speakers.api'] = $app->share(function ($app) {
-            $userMapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\User::class);
-            $talkMapper = $app['spot']->mapper(\OpenCFP\Domain\Entity\Talk::class);
+            /* @var Locator $spot */
+            $spot = $app['spot'];
+            
+            $userMapper = $spot->mapper(\OpenCFP\Domain\Entity\User::class);
+            $talkMapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
             $speakerRepository = new SpotSpeakerRepository($userMapper);
 
             return new Speakers(
